@@ -1,0 +1,79 @@
+Practical Machine Learning - Prediction Assignment
+Feb 22, 2015
+========================================================
+
+## Data Retrieval, Cleaning and EDA
+
+Load the need packages
+```{r}
+library(randomForest)
+library(caret)
+setwd("C:/Users/ed/Documents/Coursera/Course8_Machine Learning/Assignment")
+
+```
+
+Read in and check out and clean the data - iterative - had to take care of #DIV/0 - also to take care of the null values
+```{r }
+Data <- read.csv("pml-training.csv",na.strings=c('NA','','#DIV/0!'))
+DataTwenty <- read.csv("pml-testing.csv",na.strings=c('NA','','#DIV/0!'))
+
+View (Data)
+#dim(Data);dim(DataTwenty)
+#summary(Data)
+#names(Data)
+```
+
+Let's delete the useless columns, first 7 columns of Ids and datetime are not useful in a model. Remember to provide the same treatment to the testing set.
+Let's also get columns that are fully populated with Data
+
+```{r}
+Data1 <- Data[-(1:7)]
+DataTwenty1 <- DataTwenty[-(1:7)]
+
+goodcol <- colnames(Data1[colSums(is.na(Data1)) == 0])
+goodcolTwenty <- colnames(DataTwenty1[colSums(is.na(DataTwenty1)) == 0])
+
+Data2 <- Data1[goodcol]
+DataTwenty2 <- DataTwenty1[goodcolTwenty]
+
+View(Data2)
+View(DataTwenty2)
+```
+
+## Modeling
+Create a traing and testing for cross validation of the model. Let's try a RandomForest (try Rfit and it was bad - had to delete and forum the rest)
+
+```{r}
+set.seed(1345345)
+inTrain = createDataPartition(Data2$classe, p = 3/4)[[1]]
+training = Data2[inTrain,]
+testing = Data2[-inTrain,]
+```
+
+## Cross Validation
+```{r}
+modFit2 <- randomForest(classe ~ .,data=training,ntree=500, mtry=30)
+
+training_pred2 <- predict(modFit2,training)
+print(confusionMatrix(training_pred2, training$classe))
+```
+HeeHaw! - this is 100% accurate on the training - 99% on testing.. gtg
+
+```{r}
+training_pred3 <- predict(modFit2,testing)
+print(confusionMatrix(training_pred3, testing$classe))
+```
+I would say this model is ready for prime time
+
+
+## Prediction
+Now we can test this boy on the 20 real testing population
+
+```{r}
+answers <- predict(modFit2,DataTwenty2)
+answers
+```
+
+From the results, the random Forest model was very effective and its predictions.  Getting a high accurancy.  The accurancy yield 20/20 in the Project submission as well
+
+
